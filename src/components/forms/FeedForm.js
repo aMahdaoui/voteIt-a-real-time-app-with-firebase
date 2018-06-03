@@ -6,7 +6,7 @@ class FeedForm extends Component {
         super(props); 
     }
 
-    /** function to set the added title's item fitst char to UpperCase,
+    /** function to set the added title's item first char to UpperCase,
     * it will be useful while sorting items alphabetically 
     **/
     capitalize = (string) => {

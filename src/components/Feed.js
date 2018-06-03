@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import _ from 'lodash';
+import fire from './fire';
  
 import ShowAddButton from './ShowAddButton';
 import FeedForm from './forms/FeedForm';
@@ -15,15 +16,46 @@ class Feed extends Component {
         this.state = {
         	sortedBy : 'notSorted',
         	filter : 'all',
-        	items : [
+        	items : [],
+        	/*items : [
         		{key:'1', title:'RealTimeData', description: 'FireBase is cool', voteCount:'48'},
         		{key:'4', title:'React JS is Awesome', description: 'Most beautiful UI library', voteCount:'60'},
         		{key:'3', title:'Coffe make u awake', description: 'Drink responsibly', voteCount:'-5'},
         		{key:'2', title:'Java script is Fun', description: 'Lexical scoping FTW', voteCount:'58'},
-        	],
+        	],*/
         	formDisplayed : false, 	 
         }
     }
+
+    loadData = () => {
+
+    	 /* Create reference to items in Firebase Database */
+	    let itemsRef = fire.database().ref('items').orderByKey().limitToLast(100);
+	    itemsRef.on('value', snap => {
+	      
+	      /* Update React state when item is added at Firebase Database */
+	      	var items = []; 
+			snap.forEach( itemSnap => {
+				var item = itemSnap.val();
+				item.key = itemSnap.key ;
+				//console.log(itemSnap.key())    
+				items.push(item); 
+			}); 
+
+			//Update items's state and keep them sorted as they was before
+			let {sortedBy} = this.state ;  
+			this.setState({items}, () => {this.ItemsSortedBy(sortedBy)});
+ 
+
+	    // let item = { item: snapshot.val(), key: snapshot.key };
+	    // this.setState({ items: [item].concat(this.state.items) });
+	    
+	    }) 
+    }
+
+   	componentDidMount() {
+   		this.loadData(); 
+   	}
 
     // click add new item button add item form will be display and the button 
     // click again it disapair
@@ -35,19 +67,35 @@ class Feed extends Component {
 
     // add item to array when end user submit form Add new item
     onNewItem = (newItem) =>{
-    			let {sortedBy} = this.state ;
+
+    	//e.preventDefault(); // <- prevent form submit from reloading the page
+	    
+	    /* Send the newItem to Firebase */ 
+	    fire.database().ref('items').push(newItem);  
+
+
+    	// var ref = new Firebase("https://gsr-demo.firebase.io-demo.com/feed");
+    	// ref.push(newItem);
+
+    			/*let {sortedBy} = this.state ;
         		newItem.key = this.state.items.length+1;
             	this.setState({ 
             		items : [...this.state.items, newItem ],
             		formDisplayed : false , 
             		filter : ''
             	}, 
-            	() => {  this.ItemsSortedBy(sortedBy) } );
+            	() => {  this.ItemsSortedBy(sortedBy) } );*/
     };
 
     // handle onClick vote Up/Down button 
-   	onVote = (item) => { 
-   		//we use lodash library to get all uniq items of state and 
+   	onVote = (item) => {  
+   		
+   		let itemRef = fire.database().ref('items').child(item.key);
+	    itemRef.update(item);
+
+   		//console.log(fire.database().ref('items').child(item.key).key);
+
+   		/*//we use lodash library to get all uniq items of state and 
    		//get selected (voted Up/Down) item based on item key
 		var items = _.uniq(this.state.items);
 		var index = _.findIndex(
@@ -59,10 +107,10 @@ class Feed extends Component {
 		// the voteCount should be updated according to the clicked 
 		// vote button Up/Down
 		items.splice(index, 1, item);  
- 		
+ 		*/
  		let {sortedBy} = this.state ; 
  		//update items and keep sorted list as it is before
-		this.setState({items}, () => {  this.ItemsSortedBy(sortedBy) }) ;
+		this.setState({}, () => {  this.ItemsSortedBy(sortedBy) }) ;
     }
 
     // handle on click sorted by buttons 
